@@ -1,31 +1,29 @@
-import axios from "axios";
 import { useState, useEffect } from "react";
 import apiClient from "./services/api-client";
-
-interface User {
-  id: number;
-  name: string;
-}
+import userService, { User } from "./services/user-service";
 
 function App() {
   // https://jsonplaceholder.typicode.com/users
   //res.data is an array of object
+
   const [users, setUsers] = useState<User[]>([]);
   const [error, setError] = useState("");
   useEffect(() => {
-    apiClient
-      .get<User[]>("/users")
+    const { request, cancel } = userService.getAllUsers();
+    request
       .then((res) => {
         setUsers(res.data);
       })
       .catch((err) => console.log(err.message));
+
+    return () => cancel();
   }, []);
 
   //delete
   const deleteUser = (user: User) => {
     const originalUsers = [...users];
     setUsers(users.filter((u) => u.id !== user.id));
-    apiClient.delete("/users/" + user.id).catch((err) => {
+    userService.deleteUser(user.id).catch((err) => {
       setError(err.message);
       setUsers(originalUsers);
     });
@@ -36,18 +34,21 @@ function App() {
     const originalUsers = [...users];
     const newUser = { id: 12, name: "Motaqabbir" };
     setUsers([newUser, ...users]);
-    apiClient.post("/users", newUser).catch((err) => {
+    userService.createUser(newUser).catch((err) => {
       setError(err.message);
       setUsers(originalUsers);
     });
-    console.log(newUser);
   };
   //update
   const updateUser = (user: User) => {
     const originalUsers = [...users];
     const updatedUser = { ...user, name: user.name + "!" };
     setUsers(users.map((u) => (u.name === user.name ? updatedUser : u)));
-    apiClient.patch("/users/" + user.id, updatedUser);
+
+    userService.updateUser(updatedUser).catch((err) => {
+      setUsers(originalUsers);
+      setError(err.message);
+    });
   };
 
   return (
@@ -88,3 +89,6 @@ function App() {
 }
 
 export default App;
+function getAllUser() {
+  throw new Error("Function not implemented.");
+}
